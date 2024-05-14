@@ -336,10 +336,7 @@ Adafruit_SSD1306::Adafruit_SSD1306(int8_t rst_pin)
     @brief  Destructor for Adafruit_SSD1306 object.
 */
 Adafruit_SSD1306::~Adafruit_SSD1306(void) {
-  if (buffer) {
-    free(buffer);
-    buffer = NULL;
-  }
+  memoryFree();
 }
 
 // LOW-LEVEL UTILS ---------------------------------------------------------
@@ -455,6 +452,50 @@ void Adafruit_SSD1306::ssd1306_command(uint8_t c) {
 // ALLOCATE & INIT DISPLAY -------------------------------------------------
 
 /*!
+    @brief  Allocate RAM for image buffer
+    @return true on successful allocation, false otherwise.
+            Well-behaved code should check the return value before
+            proceeding.
+    @note   This function is only usefull in case of multi devices
+*/
+void *Adafruit_SSD1306::memoryAlloc(void *buf) {
+  intbuf = true;
+  if (buf) {
+    buffer = buf;
+    intbuf = false;
+  } else if ((!buffer) && !(buffer = (uint8_t *)bufferSize()) {
+    return false;
+  }
+
+  clearDisplay();
+
+#ifndef SSD1306_NO_SPLASH
+  if (HEIGHT > 32) {
+    drawBitmap((WIDTH - splash1_width) / 2, (HEIGHT - splash1_height) / 2,
+               splash1_data, splash1_width, splash1_height, 1);
+  } else {
+    drawBitmap((WIDTH - splash2_width) / 2, (HEIGHT - splash2_height) / 2,
+               splash2_data, splash2_width, splash2_height, 1);
+  }
+#endif
+
+  return true; // Success
+}
+
+/*!
+    @brief  Release memory allocated for image buffer
+    @note   This function is only usefull in case of multi devices
+*/
+bool Adafruit_SSD1306::memoryFree() {
+  if (buffer) {
+    if (intbuf) {
+      free(buffer);
+    }
+    buffer = NULL;
+  }
+}
+
+/*!
     @brief  Allocate RAM for image buffer, initialize peripherals and pins.
     @param  vcs
             VCC selection. Pass SSD1306_SWITCHCAPVCC to generate the display
@@ -492,20 +533,8 @@ void Adafruit_SSD1306::ssd1306_command(uint8_t c) {
 bool Adafruit_SSD1306::begin(uint8_t vcs, uint8_t addr, bool reset,
                              bool periphBegin) {
 
-  if ((!buffer) && !(buffer = (uint8_t *)malloc(WIDTH * ((HEIGHT + 7) / 8))))
+  if (!memoryAlloc())
     return false;
-
-  clearDisplay();
-
-#ifndef SSD1306_NO_SPLASH
-  if (HEIGHT > 32) {
-    drawBitmap((WIDTH - splash1_width) / 2, (HEIGHT - splash1_height) / 2,
-               splash1_data, splash1_width, splash1_height, 1);
-  } else {
-    drawBitmap((WIDTH - splash2_width) / 2, (HEIGHT - splash2_height) / 2,
-               splash2_data, splash2_width, splash2_height, 1);
-  }
-#endif
 
   vccstate = vcs;
 

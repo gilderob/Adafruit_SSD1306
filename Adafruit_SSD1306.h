@@ -147,6 +147,8 @@ public:
 
   bool begin(uint8_t switchvcc = SSD1306_SWITCHCAPVCC, uint8_t i2caddr = 0,
              bool reset = true, bool periphBegin = true);
+  void *memoryAlloc(void *buf = NULL);
+  void memoryFree();
   void display(void);
   void clearDisplay(void);
   void invertDisplay(bool i);
@@ -162,6 +164,7 @@ public:
   void ssd1306_command(uint8_t c);
   bool getPixel(int16_t x, int16_t y);
   uint8_t *getBuffer(void);
+  int bufferSize() { return WIDTH * ((HEIGHT + 7) / 8) };
 
 protected:
   inline void SPIwrite(uint8_t d) __attribute__((always_inline));
@@ -174,8 +177,8 @@ protected:
                    ///< SPI.cpp, SPI.h
   TwoWire *wire;   ///< Initialized during construction when using I2C. See
                    ///< Wire.cpp, Wire.h
-  uint8_t *buffer; ///< Buffer data used for display buffer. Allocated when
-                   ///< begin method is called.
+  uint8_t *buffer; ///< Buffer data used for display buffer
+  bool intbuf;     ///< Buffer memory is (or not) internaly allocated
   int8_t i2caddr;  ///< I2C address initialized when begin method is called.
   int8_t vccstate; ///< VCC selection, set by begin method.
   int8_t page_end; ///< not used
